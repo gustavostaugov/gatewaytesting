@@ -8,16 +8,14 @@
     <input type="number" id="numChecks" placeholder="Enter the number of checks">
     <select id="urlDropdown">
         <option value="https://checkip.amazonaws.com">checkip.amazonaws.com</option>
-        <option value="http://whatismyip.akamai.com/">whatismyip.akamai.com</option>
         <option value="https://ident.me">ident.me</option>
         <!--<option value="https://ifconfig.me/ip">ifconfig.me</option>-->
         <option value="https://ipinfo.io/ip">ipinfo.io</option>
         <option value="https://icanhazip.com">icanhazip.com</option>
         <option value="https://wtfismyip.com/text">wtfismyip.com</option>
-        <option value="http://ip.tyk.nu/">ip.tyk.nu</option>
-        
-        
-        
+        <!--<option value="http://whatismyip.akamai.com/">whatismyip.akamai.com</option>
+        <option value="http://ip.tyk.nu/">ip.tyk.nu</option>-->
+        <option value="loop">Loop between previous options</option>
         <option value="custom">Custom URL</option>
     </select>
     <input type="text" id="urlInput" placeholder="Enter the URL" style="display: none;">
@@ -28,6 +26,9 @@
     <script type="text/javascript">
         $(document).ready(function() {
             var detailedResultsDiv = $("#detailedResults");
+            var options = $("#urlDropdown option");
+            var loopOption = options.last();
+            var previousOption = options.first();
 
             function createIframe(url) {
                 var iframe = $("<iframe>").attr({
@@ -51,17 +52,37 @@
                 var numChecks = parseInt($("#numChecks").val());
                 var url;
                 var selectedValue = $("#urlDropdown").val();
+
                 if (selectedValue === "custom") {
                     url = $("#urlInput").val();
+                } else if (selectedValue === "loop") {
+                    loopBetweenPreviousOptions(numChecks);
+                    return; // Exit early to avoid further execution
                 } else {
                     url = selectedValue;
                 }
+
                 detailedResultsDiv.empty(); // Clear previous results
 
                 for (var i = 1; i <= numChecks; i++) {
                     createIframe(url);
                 }
             });
+
+            function loopBetweenPreviousOptions(numChecks) {
+                var currentIndex = options.index(previousOption);
+                var numOptions = options.length - 2; // Exclude "Loop between previous options" and "Custom URL"
+
+                for (var i = 1; i <= numChecks; i++) {
+                    var optionIndex = (currentIndex + i - 1) % numOptions;
+                    var selectedOption = options.eq(optionIndex);
+                    var url = selectedOption.val();
+
+                    createIframe(url);
+                }
+
+                previousOption = options.eq(currentIndex);
+            }
         });
     </script>
 </body>
