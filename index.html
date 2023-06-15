@@ -1,0 +1,94 @@
+<html lang="en">
+<head>
+    <title>Check gateways usage</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+    <h1>Your Current IP Address:</h1>
+    <input type="number" id="numChecks" placeholder="Enter the number of checks">
+    <button id="runChecks">Run IP Checks</button>
+    <div id="acumResults"></div>
+    <div id="detailedResults"></div>
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            var counts = {}; // Object to store response counts
+            var detailedResultsDiv = $("#detailedResults");
+            var acumResultsDiv = $("#acumResults");
+
+            function sanitizeId(id) {
+                return id.replace(/[^a-zA-Z0-9-_:.]/g, "_"); // Replace special characters with underscores
+            }
+
+            function check(attempt) {
+                return new Promise(function(resolve, reject) {
+                    $.ajax({
+                        url: "http://ident.me/?" + Math.floor(Math.random() * 1000000),
+                        success: function (data) {
+                            console.log(data);
+                            var resultId = "result_" + attempt; // Get the ID of the corresponding div
+                            console.log(resultId);
+                            $("#" + resultId).append(data); // Assign the result to the correct div
+
+                            var sanitizedData = sanitizeId(data); // Sanitize the response
+
+                            if (!counts[sanitizedData]) {
+                                console.log("first time I see " + data);
+                                counts[sanitizedData] = 1;
+                            } else {
+                                counts[sanitizedData]++;
+                                console.log("Counting more occurrences of " + data + ": " + counts[sanitizedData]);
+                            }
+
+                            resolve();
+                        },
+                        error: function (error) {
+                            reject(error);
+                        }
+                    });
+                });
+            }
+
+            $("#runChecks").click(function() {
+                var numChecks = parseInt($("#numChecks").val());
+                detailedResultsDiv.empty(); // Clear previous results
+                acumResultsDiv.empty(); // Clear previous accumulated results
+                counts = {}; // Reset the counts object
+
+                var promises = [];
+
+                for (var i = 1; i <= numChecks; i++) {
+                    // Create a new div with an ID for each IP check
+                    var divId = "result_" + i;
+                    var div = $("<div>").attr("id", divId).appendTo(detailedResultsDiv);
+                    div.text("Test " + i + ": ");
+                    console.log("div " + i + " generated");
+                    promises.push(check(i));
+                }
+
+                Promise.all(promises)
+                    .then(function() {
+                        // Iterate over the counts and update the accumulated results
+                        for (var response in counts) {
+                            if (counts.hasOwnProperty(response)) {
+                                var responseId = sanitizeId(response);
+                                var responseDiv = $("#" + responseId);
+                                if (responseDiv.length === 0) {
+                                    $("<div>")
+                                        .attr("id", responseId)
+                                        .text(response + ": " + counts[response])
+                                        .appendTo(acumResultsDiv);
+                                } else {
+                                    responseDiv.text(response + ": " + counts[response]);
+                                }
+                            }
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error("Error occurred:", error);
+                    });
+            });
+        });
+    </script>
+</body>
+</html>
