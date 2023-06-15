@@ -1,92 +1,66 @@
 <html lang="en">
 <head>
-    <title>Check Gateways</title>
+    <title>Check gateways usage</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 </head>
 <body>
-    <h1>Verifies through which public IPs you are reaching the Internet</h1>
+    <h1>Check through which gateways you are reaching the internet:</h1>
     <input type="number" id="numChecks" placeholder="Enter the number of checks">
+    <select id="urlDropdown">
+        <option value="https://checkip.amazonaws.com">checkip.amazonaws.com</option>
+        <option value="http://whatismyip.akamai.com/">whatismyip.akamai.com</option>
+        <option value="https://ident.me">ident.me</option>
+        <!--<option value="https://ifconfig.me/ip">ifconfig.me</option>-->
+        <option value="https://ipinfo.io/ip">ipinfo.io</option>
+        <option value="https://icanhazip.com">icanhazip.com</option>
+        <option value="https://wtfismyip.com/text">wtfismyip.com</option>
+        <option value="http://ip.tyk.nu/">ip.tyk.nu</option>
+        
+        
+        
+        <option value="custom">Custom URL</option>
+    </select>
+    <input type="text" id="urlInput" placeholder="Enter the URL" style="display: none;">
     <button id="runChecks">Run IP Checks</button>
-    <div id="acumResults"></div>
+    <br/>
     <div id="detailedResults"></div>
 
     <script type="text/javascript">
         $(document).ready(function() {
-            var counts = {}; // Object to store response counts
             var detailedResultsDiv = $("#detailedResults");
-            var acumResultsDiv = $("#acumResults");
 
-            function sanitizeId(id) {
-                return id.replace(/[^a-zA-Z0-9-_:.]/g, "_"); // Replace special characters with underscores
-            }
-
-            function check(attempt) {
-                return new Promise(function(resolve, reject) {
-                    $.ajax({
-                        url: "https://ident.me/?" + Math.floor(Math.random() * 1000000),
-                        success: function (data) {
-                            console.log(data);
-                            var resultId = "result_" + attempt; // Get the ID of the corresponding div
-                            console.log(resultId);
-                            $("#" + resultId).append(data); // Assign the result to the correct div
-
-                            var sanitizedData = sanitizeId(data); // Sanitize the response
-
-                            if (!counts[sanitizedData]) {
-                                console.log("first time I see " + data);
-                                counts[sanitizedData] = 1;
-                            } else {
-                                counts[sanitizedData]++;
-                                console.log("Counting more occurrences of " + data + ": " + counts[sanitizedData]);
-                            }
-
-                            resolve();
-                        },
-                        error: function (error) {
-                            reject(error);
-                        }
-                    });
+            function createIframe(url) {
+                var iframe = $("<iframe>").attr({
+                    src: url + "?" + Math.floor(Math.random() * 1000000),
+                    width: "140px",
+                    height: "45px"
                 });
+                detailedResultsDiv.append(iframe);
             }
+
+            $("#urlDropdown").change(function() {
+                var selectedValue = $(this).val();
+                if (selectedValue === "custom") {
+                    $("#urlInput").show();
+                } else {
+                    $("#urlInput").hide();
+                }
+            });
 
             $("#runChecks").click(function() {
                 var numChecks = parseInt($("#numChecks").val());
+                var url;
+                var selectedValue = $("#urlDropdown").val();
+                if (selectedValue === "custom") {
+                    url = $("#urlInput").val();
+                } else {
+                    url = selectedValue;
+                }
                 detailedResultsDiv.empty(); // Clear previous results
-                acumResultsDiv.empty(); // Clear previous accumulated results
-                counts = {}; // Reset the counts object
-
-                var promises = [];
 
                 for (var i = 1; i <= numChecks; i++) {
-                    // Create a new div with an ID for each IP check
-                    var divId = "result_" + i;
-                    var div = $("<div>").attr("id", divId).appendTo(detailedResultsDiv);
-                    div.text("Test " + i + ": ");
-                    console.log("div " + i + " generated");
-                    promises.push(check(i));
+                    createIframe(url);
                 }
-
-                Promise.all(promises)
-                    .then(function() {
-                        // Iterate over the counts and update the accumulated results
-                        for (var response in counts) {
-                            if (counts.hasOwnProperty(response)) {
-                                var responseId = sanitizeId(response);
-                                var responseDiv = $("#" + responseId);
-                                if (responseDiv.length === 0) {
-                                    $("<div>")
-                                        .attr("id", responseId)
-                                        .text(response + ": " + counts[response])
-                                        .appendTo(acumResultsDiv);
-                                } else {
-                                    responseDiv.text(response + ": " + counts[response]);
-                                }
-                            }
-                        }
-                    })
-                    .catch(function(error) {
-                        console.error("Error occurred:", error);
-                    });
             });
         });
     </script>
