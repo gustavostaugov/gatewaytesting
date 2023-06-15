@@ -23,7 +23,7 @@
             function check(attempt) {
                 return new Promise(function(resolve, reject) {
                     $.ajax({
-                        url: "http://ident.me/?" + Math.floor(Math.random() * 1000000),
+                        url: "https://ident.me/?" + Math.floor(Math.random() * 1000000),
                         success: function (data) {
                             console.log(data);
                             var resultId = "result_" + attempt; // Get the ID of the corresponding div
